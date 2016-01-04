@@ -82,7 +82,7 @@ public class ModbusClient {
 
             bootstrap = new Bootstrap();
             bootstrap.group(workerGroup);
-            bootstrap.channel(NioSocketChannel.class);
+            bootstrap.channel(NioSocketChannel.class);//接收一个新的Channel
             bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
             bootstrap.handler(new ModbusChannelInitializer(handler));
 
@@ -92,10 +92,10 @@ public class ModbusClient {
 
             setConnectionState(CONNECTION_STATES.connected);
 
-            channel = f.channel();
-
+            channel = f.channel();  //channel是netty的bootstrap构建的
+            
             channel.closeFuture().addListener(new GenericFutureListener<ChannelFuture>() {
-
+                                           //加一个监听器，来监听关闭动作是否完成,非阻塞型的，这个动作不完成主线程也会继续执行下去
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     workerGroup.shutdownGracefully();
@@ -122,7 +122,7 @@ public class ModbusClient {
         }
     }
 
-    private synchronized int calculateTransactionIdentifier() {
+    private synchronized int calculateTransactionIdentifier() {//
         if (lastTransactionIdentifier < ModbusConstants.TRANSACTION_IDENTIFIER_MAX) {
             lastTransactionIdentifier++;
         } else {
@@ -149,7 +149,7 @@ public class ModbusClient {
         propertyChangeSupport.removePropertyChangeListener(listener);
     }
 
-    public int callModbusFunction(ModbusFunction function)
+    public int callModbusFunction(ModbusFunction function)//构建Modbus指令帧Frame
             throws ConnectionException {
 
         if (channel == null) {
@@ -161,17 +161,17 @@ public class ModbusClient {
 
         ModbusHeader header = new ModbusHeader(transactionId, protocolIdentifier, pduLength, unitIdentifier);
         ModbusFrame frame = new ModbusFrame(header, function);
-        channel.writeAndFlush(frame);
+        channel.writeAndFlush(frame);               //将帧写进通道，会引发handler的处理过程
 
         return transactionId;
     }
 
-    public <V extends ModbusFunction> V callModbusFunctionSync(ModbusFunction function)
+    public <V extends ModbusFunction> V callModbusFunctionSync(ModbusFunction function)//同步方式
             throws NoResponseException, ErrorResponseException, ConnectionException {
 
-        int transactionId = callModbusFunction(function);
+        int transactionId = callModbusFunction(function);//？？？？？？？？？？？？？
 
-        ModbusResponseHandler handler = (ModbusResponseHandler) channel.pipeline().get("responseHandler");
+        ModbusResponseHandler handler = (ModbusResponseHandler) channel.pipeline().get("responseHandler");//返回这个叫responseHandler的ChannelHandler
         if (handler == null) {
             throw new ConnectionException("Not connected!");
         }
