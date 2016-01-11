@@ -15,8 +15,8 @@ public class ModbusEncoder extends ChannelOutboundHandlerAdapter {
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof ModbusFrame) {
             ModbusFrame frame = (ModbusFrame) msg;
-
-            ctx.writeAndFlush(frame.encode());
+            										//看ChannelHandlerContext这个重要的类
+            ctx.writeAndFlush(frame.encode());//对要发送的ModbusFrame进行编码
         } else {
             ctx.write(msg);
         }

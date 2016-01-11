@@ -22,13 +22,15 @@ import de.gandev.modjn.entity.func.WriteSingleRegister;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.util.internal.RecyclableArrayList;
+
 import java.util.List;
 
 /**
  *
  * @author ag
  */
-public class ModbusDecoder extends ByteToMessageDecoder {
+public class ModbusDecoder extends ByteToMessageDecoder {//ByteToMessageDecoder没有考虑TCP粘包和组包的问题
 
     private final boolean serverMode;
 
@@ -38,21 +40,21 @@ public class ModbusDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf buffer, List<Object> out) {
-        if (buffer.capacity() < MBAP_LENGTH + 1 /*Function Code*/) {
+        if (buffer.capacity() < MBAP_LENGTH + 1 /*Function Code*/) {//只是这个条件是否会有问题？？？？
             return;
         }
 
-        ModbusHeader mbapHeader = ModbusHeader.decode(buffer);
+        ModbusHeader mbapHeader = ModbusHeader.decode(buffer);//从buffer中读出2+2+2+1个字节组成header
 
-        short functionCode = buffer.readUnsignedByte();
+        short functionCode = buffer.readUnsignedByte();//从buffer中独处1个字节，赋值个functionCode
 
         ModbusFunction function = null;
-        switch (functionCode) {
+        switch (functionCode) {              //根据functionCode,来创建对应的ModbusFunction子类实例
             case ModbusFunction.READ_COILS:
-                if (serverMode) {
-                    function = new ReadCoilsRequest();
+                if (serverMode) {            //确定当前是否是服务器模式，boolean serverMode
+                    function = new ReadCoilsRequest();   //服务器端需要对request解码-把看不懂的串字符变成看得懂得
                 } else {
-                    function = new ReadCoilsResponse();
+                    function = new ReadCoilsResponse();   //客户端需要对response解码
                 }
                 break;
             case ModbusFunction.READ_DISCRETE_INPUTS:
@@ -98,16 +100,23 @@ public class ModbusDecoder extends ByteToMessageDecoder {
                 break;
         }
 
-        if (ModbusFunction.isError(functionCode)) {
+        if (ModbusFunction.isError(functionCode)) {       //当functionCode是错误类型时，创建ModbusError
             function = new ModbusError(functionCode);
         } else if (function == null) {
             function = new ModbusError(functionCode, (short) 1);
         }
 
-        function.decode(buffer.readBytes(buffer.readableBytes()));
+        function.decode(buffer.readBytes(buffer.readableBytes()));//创建好对象的function后读入所有可读的字节，decode是一个抽象方法，被不同子类实现
+                                                                  //感觉有问题呀，凭什么是所有可读的字节？答：不同的子类会进行不同的decode，所以是可行的 ？
+        ModbusFrame frame = new ModbusFrame(mbapHeader, function);  ////buffer中的一个数据序列被解码成功，成为ModbusFrame
 
-        ModbusFrame frame = new ModbusFrame(mbapHeader, function);
-
-        out.add(frame);
+        out.add(frame);      //将ModbusFrame加入到一个list中，这个out对象是list对象，作用是？？？？
     }
 }
+/*
+ * time: 2016.1.4  arthor: haifeng
+ * 
+ * 在ByteToMessageDecoder（它继承于ChannelInboundhanleradapter）中，decode是被callDecode调用的，而callDecode是在channelRead和channelInactive方法中调用的。
+ * 在这两个方法中都定义了一个  RecyclableArrayList “out” = RecyclableArrayList.newInstance();
+ * 在channelRead和channelInactive方法最后都调用了out.recycle()
+ */

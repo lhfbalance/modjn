@@ -63,16 +63,16 @@ public class ExampleUI extends javax.swing.JFrame {
             String response = "FUNCTION NOT SUPPORTED";
             switch (functionCode) {
                 case ModbusFunction.READ_COILS:
-                    if (asyncClient) {
-                        modbusClient.readCoilsAsync(addr, quantity);
+                    if (asyncClient) {                   //asyncClient = handler != null;
+                        modbusClient.readCoilsAsync(addr, quantity);   //异步的时候在modbusResponseHandler中的newResponse()方法中将response显示出来。这是个完整的response，包括MBAP
                     } else {
                         ReadCoilsResponse readCoilsResponse = modbusClient.readCoils(addr, quantity);
                         response = Util.getBinaryString(readCoilsResponse.getByteCount(), readCoilsResponse.getCoilStatus());
-                    }
+                    }                                                 //同步的时候，
                     break;
                 case ModbusFunction.READ_DISCRETE_INPUTS:
                     if (asyncClient) {
-                        modbusClient.readDiscreteInputs(addr, quantity);
+                        modbusClient.readDiscreteInputsAsync(addr, quantity);  //是不是方法调用错了
                     } else {
                         ReadDiscreteInputsResponse readDiscreteInputs = modbusClient.readDiscreteInputs(addr, quantity);
                         response = Util.getBinaryString(readDiscreteInputs.getByteCount(), readDiscreteInputs.getInputStatus());
@@ -80,7 +80,7 @@ public class ExampleUI extends javax.swing.JFrame {
                     break;
                 case ModbusFunction.READ_HOLDING_REGISTERS:
                     if (asyncClient) {
-                        modbusClient.readHoldingRegisters(addr, quantity);
+                        modbusClient.readHoldingRegistersAsync(addr, quantity);//换成了async
                     } else {
                         ReadHoldingRegistersResponse readHoldingRegistersResponse = modbusClient.readHoldingRegisters(addr, quantity);
                         response = Arrays.toString(readHoldingRegistersResponse.getRegisters());
@@ -88,7 +88,7 @@ public class ExampleUI extends javax.swing.JFrame {
                     break;
                 case ModbusFunction.READ_INPUT_REGISTERS:
                     if (asyncClient) {
-                        modbusClient.readInputRegisters(addr, quantity);
+                        modbusClient.readInputRegistersAsync(addr, quantity);
                     } else {
                         ReadInputRegistersResponse readInputRegistersResponse = modbusClient.readInputRegisters(addr, quantity);
                         response = Arrays.toString(readInputRegistersResponse.getInputRegisters());
@@ -96,7 +96,7 @@ public class ExampleUI extends javax.swing.JFrame {
                     break;
                 case ModbusFunction.WRITE_SINGLE_COIL:
                     if (asyncClient) {
-                        modbusClient.writeSingleCoil(addrWrite, valueWrite > 0);
+                        modbusClient.writeSingleCoilAsync(addrWrite, valueWrite > 0);
                     } else {
                         WriteSingleCoil writeSingleCoil = modbusClient.writeSingleCoil(addrWrite, valueWrite > 0);
                         response = writeSingleCoil.toString();
@@ -104,7 +104,7 @@ public class ExampleUI extends javax.swing.JFrame {
                     break;
                 case ModbusFunction.WRITE_SINGLE_REGISTER:
                     if (asyncClient) {
-                        modbusClient.writeSingleRegister(addrWrite, valueWrite);
+                        modbusClient.writeSingleRegisterAsync(addrWrite, valueWrite);
                     } else {
                         WriteSingleRegister writeSingleRegister = modbusClient.writeSingleRegister(addrWrite, valueWrite);
                         response = writeSingleRegister.toString();
@@ -125,7 +125,7 @@ public class ExampleUI extends javax.swing.JFrame {
             modbusClient.close();
         }
 
-        asyncClient = handler != null;
+        asyncClient = handler != null;            //asyncClient由handler决定，
 
         String host = tfHost.getText();
         String port = tfRemotePort.getText();
@@ -212,7 +212,7 @@ public class ExampleUI extends javax.swing.JFrame {
             }
         });
 
-        tfHost.setText("10.0.1.55");
+        tfHost.setText("127.0.0.1");
 
         tfPort.setText("30502");
 
@@ -308,7 +308,7 @@ public class ExampleUI extends javax.swing.JFrame {
             }
         });
 
-        tfAddr.setText("12288");
+        tfAddr.setText("0");
 
         btReadDiscreteInputs.setText("ReadDiscreteInputs");
         btReadDiscreteInputs.addActionListener(new java.awt.event.ActionListener() {
@@ -363,7 +363,7 @@ public class ExampleUI extends javax.swing.JFrame {
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Write"));
 
-        tfAddrWrite.setText("12288");
+        tfAddrWrite.setText("0");
 
         tfValueWrite.setText("10");
 
@@ -562,10 +562,10 @@ public class ExampleUI extends javax.swing.JFrame {
 
             @Override
             public void newResponse(ModbusFrame frame) {
-                taLog.append(frame.toString() + "\n");
+                taLog.append(frame.toString() + "\n");        //异步的时候和同步的时候在显示框里显示response的方式是不一样的
             }
         };
-        setupClient(handler);
+        setupClient(handler);          //异步时，setup参数不为null
     }//GEN-LAST:event_btConnectAsyncActionPerformed
 
     /**

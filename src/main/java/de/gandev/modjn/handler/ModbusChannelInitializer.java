@@ -46,18 +46,18 @@ public class ModbusChannelInitializer extends ChannelInitializer<SocketChannel> 
         pipeline.addLast("encoder", new ModbusEncoder());
         pipeline.addLast("decoder", new ModbusDecoder(handler instanceof ModbusRequestHandler));
 
-        if (handler instanceof ModbusRequestHandler) {
+        if (handler instanceof ModbusRequestHandler) {     //根据传入的handler不同使用不同的，加入不同的处理器
             //server
-            pipeline.addLast("requestHandler", handler);
+            pipeline.addLast("requestHandler", handler);  //名字为requesHandler
         } else if (handler instanceof ModbusResponseHandler) {
             //async client
-            pipeline.addLast("responseHandler", handler);
-        } else {
-            //sync client
+            pipeline.addLast("responseHandler", handler);//名字为responseHandler
+        } else {                                                //同步式 的客户端
+            //sync client                     //如果setup没有参数传递到这里，也是要new一个ModbusResponseHandler的
             pipeline.addLast("responseHandler", new ModbusResponseHandler() {
 
                 @Override
-                public void newResponse(ModbusFrame frame) {
+                public void newResponse(ModbusFrame frame) {   //见ModbusResponseHandler
                     //discard in sync mode
                 }
             });

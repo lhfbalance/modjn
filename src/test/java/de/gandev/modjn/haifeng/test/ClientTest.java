@@ -28,7 +28,8 @@ public class ClientTest {
 		
 		ReadHoldingRegistersResponse myResponse;
 		try {
-			myResponse = myClient.myModbusClient.readHoldingRegisters(1, 3);
+			myResponse = myClient.myModbusClient.readHoldingRegisters(1, 3);//同步的
+			//myResponse = myClient.myModbusClient.readHoldingRegistersAsync(1, 3);//异步
 			System.out.println(myResponse.calculateLength());
 			System.out.println(myResponse.getRegisters().length);
 			for(int i = 0; i < myResponse.getRegisters().length; i++) {

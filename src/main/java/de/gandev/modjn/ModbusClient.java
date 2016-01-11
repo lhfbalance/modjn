@@ -76,9 +76,9 @@ public class ModbusClient {
         setup(null);
     }
 
-    public void setup(ModbusResponseHandler handler) throws ConnectionException {
-        try {
-            final EventLoopGroup workerGroup = new NioEventLoopGroup();
+    public void setup(ModbusResponseHandler handler) throws ConnectionException {//****为什么传一个ModbusResponseHandler handler
+        try {                                                                     //谁来传这个handler   
+            final EventLoopGroup workerGroup = new NioEventLoopGroup();    //在ExampleUI中，是在响应按键时，new了一个ModbusResponseHandler handler
 
             bootstrap = new Bootstrap();
             bootstrap.group(workerGroup);
@@ -166,19 +166,19 @@ public class ModbusClient {
         return transactionId;
     }
 
-    public <V extends ModbusFunction> V callModbusFunctionSync(ModbusFunction function)//同步方式
+    public <V extends ModbusFunction> V callModbusFunctionSync(ModbusFunction function)   //同步方式， 发送完请求，我就去等回复
             throws NoResponseException, ErrorResponseException, ConnectionException {
 
-        int transactionId = callModbusFunction(function);//？？？？？？？？？？？？？
+        int transactionId = callModbusFunction(function);                     
 
         ModbusResponseHandler handler = (ModbusResponseHandler) channel.pipeline().get("responseHandler");//返回这个叫responseHandler的ChannelHandler
-        if (handler == null) {
+        if (handler == null) {                                                        //返回后通过这个handler就能得到ModbusResponse
             throw new ConnectionException("Not connected!");
         }
 
         //TODO handle cast exception!?
-        return (V) handler.getResponse(transactionId).getFunction();
-    }
+        return (V) handler.getResponse(transactionId).getFunction();     //实现同步式的读写方法，关键点在这里吗？？？？？等待结果，看getResponse方法
+    }                                                                           
 
     //async function execution
     public int writeSingleCoilAsync(int address, boolean state) throws ConnectionException {
